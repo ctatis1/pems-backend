@@ -1,8 +1,7 @@
 package com.ems.backend.configs;
 
-import java.util.List;
+import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,8 +18,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    @Value("${security.jwt.cors.origins}")
-    private String corsOrigins;
 
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -37,14 +34,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf()
                 .disable()
+                .cors().configurationSource(corsConfigurationSource())
+                .and()
                 .authorizeHttpRequests(auth -> auth
                     //Rutas públicas
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/producto").permitAll()
                     //Rutas Admin
                     .requestMatchers(HttpMethod.POST, "/auth/signup", 
                                    "/empresa/**", 
-                                   "/cliente/**",  
+                                   "/cliente/**", 
+                                   "/producto/**", 
                                    "/categoria/**").hasAuthority("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/empresa/**", 
                                      "/cliente/**", 
@@ -65,9 +64,9 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(corsOrigins));
-        configuration.setAllowedMethods(List.of("GET","POST","DELETE"));
-        configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); 
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); 
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 

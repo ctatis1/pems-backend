@@ -60,6 +60,7 @@ public class ProductoController {
         producto.setCategorias(Set.of(categoria));
         producto.setNombre(productoRequest.getNombre());
         producto.setEmpresa(empresa);
+        producto.setStock(productoRequest.getStock());
 
         productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Producto creado exitosamente");

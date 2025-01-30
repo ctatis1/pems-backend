@@ -12,4 +12,5 @@ public class ProductoRequest {
     private Map<String, Double> precios;
     private String empresaNit;
     private String categoriaId;
+    private Integer stock;
 }

@@ -1,5 +1,6 @@
 package com.ems.backend.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ems.backend.entities.Orden;
+import com.ems.backend.entities.OrdenDTO;
 import com.ems.backend.services.OrdenService;
 
 @RestController
@@ -40,8 +42,8 @@ public class OrdenController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createOrden(@RequestBody Orden orden) {
-        ordenService.save(orden);
+    public ResponseEntity<?> createOrden(@RequestBody OrdenDTO ordenDTO) {
+        ordenService.save(ordenDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body("Orden creada exitosamente");
     }
 
@@ -57,11 +59,7 @@ public class OrdenController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrden(@PathVariable Long id) {
-        try {
-            ordenService.delete(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        ordenService.delete(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
