@@ -62,6 +62,7 @@ public class ProductoController {
         producto.setNombre(productoRequest.getNombre());
         producto.setEmpresa(empresa);
         producto.setStock(productoRequest.getStock());
+        producto.setPrecios(productoRequest.getPrecios());
 
         productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Producto creado exitosamente");
