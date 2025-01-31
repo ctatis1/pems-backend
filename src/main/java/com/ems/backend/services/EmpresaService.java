@@ -21,6 +21,13 @@ public class EmpresaService {
     public Optional<Empresa> getByNit(String nit){
         return empresaRepository.findById(nit);
     }
+    public Empresa updateEmpresa(String nit, Empresa empresa){
+        Empresa actualEmpresa = empresaRepository.findById(nit).orElseThrow( () -> new RuntimeException("Orden no encontrada") );
+        actualEmpresa.setNombre(empresa.getNombre());
+        actualEmpresa.setDireccion(empresa.getDireccion());
+        actualEmpresa.setTelefono(empresa.getTelefono());
+        return empresaRepository.save(actualEmpresa);
+    }
 
     public Empresa save(Empresa empresa){
         return empresaRepository.save(empresa);

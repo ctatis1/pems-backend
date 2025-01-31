@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,11 @@ public class EmpresaController {
     public ResponseEntity<Empresa> getEmpresa(@PathVariable String nit) {
         Optional<Empresa> empresa = empresaService.getByNit(nit);
         return empresa.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    @PutMapping("/{nit}")
+    public ResponseEntity<?> updateEmpresa(@PathVariable String nit, @RequestBody Empresa empresa) {
+        empresaService.updateEmpresa(nit, empresa );
+        return ResponseEntity.status(HttpStatus.CREATED).body("Empresa actualizada exitosamente");
     }
 
     @PostMapping

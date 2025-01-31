@@ -1,27 +1,22 @@
 package com.ems.backend.entities;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.MapKeyJoinColumn;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-import jakarta.persistence.Version;
 import lombok.Data;
 
 @Entity
@@ -36,24 +31,25 @@ public class Orden {
 
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
-    @JsonBackReference
+    @JsonIgnore
     private Cliente cliente;
 
-    @ManyToMany
-    @JoinTable(
-        name = "orden_producto",
-        joinColumns = @JoinColumn(name = "orden_id"),
-        inverseJoinColumns = @JoinColumn(name = "producto_id")
-    )
-    @JsonIgnore
-    private List<Producto> productos;
+    @JsonProperty("cliente")
+    public Map<String, String> getClienteInfo() {
+        Map<String, String> clienteInfo = new HashMap<>();
+        if (cliente != null) {
+            clienteInfo.put("correo", cliente.getCorreo());
+            clienteInfo.put("nombre", cliente.getNombre());
+        }
+        return clienteInfo;
+    }
 
-    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<OrdenProducto> ordenProductos = new ArrayList<>();
+    @ElementCollection
+    @CollectionTable(name = "orden_producto", joinColumns = @JoinColumn(name = "orden_id"))
+    @MapKeyJoinColumn(name = "producto_id")
+    @Column(name = "cantidad")
+    @JsonIgnore
+    private Map<Producto, Integer> productos = new HashMap<>();
 
     private Double total;
-
-    @Version 
-    private Integer version;
 }

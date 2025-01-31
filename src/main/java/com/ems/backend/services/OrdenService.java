@@ -1,27 +1,25 @@
 package com.ems.backend.services;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import com.ems.backend.entities.Cliente;
 import com.ems.backend.entities.Orden;
-import com.ems.backend.entities.OrdenDTO;
-import com.ems.backend.entities.OrdenProducto;
+import com.ems.backend.entities.OrdenRequest;
+import com.ems.backend.entities.OrdenResponse;
 import com.ems.backend.entities.Producto;
 import com.ems.backend.repositories.ClienteRepository;
-import com.ems.backend.repositories.OrdenProductoRepository;
 import com.ems.backend.repositories.OrdenRepository;
 import com.ems.backend.repositories.ProductoRepository;
 
 import jakarta.transaction.Transactional;
 
 @Service
-@Transactional
 public class OrdenService {
     @Autowired
     private OrdenRepository ordenRepository;
@@ -29,8 +27,6 @@ public class OrdenService {
     private ClienteRepository clienteRepository;
     @Autowired
     private ProductoRepository productoRepository;
-    @Autowired
-    private OrdenProductoRepository ordenProductoRepository;
 
     public List<Orden> getAll() {
         return ordenRepository.findAll();
@@ -44,61 +40,82 @@ public class OrdenService {
         return ordenRepository.findByClienteId(clienteId);
     }
 
-    public Orden updateOrden(Long id, Orden ordenDetails) {
+    public OrdenResponse updateOrden(Long id, OrdenRequest ordenDetails) {
         Orden orden = ordenRepository.findById(id).orElseThrow(() -> new RuntimeException("Orden no encontrada"));
-        orden.setTotal(ordenDetails.getTotal());
-        orden.setProductos(ordenDetails.getProductos());
-        return ordenRepository.save(orden);
+        orden.setMoneda(ordenDetails.getMoneda()); 
+        Cliente cliente = clienteRepository.findById(ordenDetails.getClienteId()).orElseThrow(() -> new RuntimeException("Cliente no encontrada")); 
+        orden.setCliente(cliente);
+
+        Map<Producto, Integer> updatedProductos = new HashMap<>();
+        double total = 0; 
+
+        if (ordenDetails.getProductos() != null && !ordenDetails.getProductos().isEmpty()) {
+            for (Map.Entry<Long, Integer> entry : ordenDetails.getProductos().entrySet()) {
+                Long productoId = entry.getKey();  
+                Integer cantidad = entry.getValue();
+    
+                Producto producto = productoRepository.findById(productoId)
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+    
+                updatedProductos.put(producto, cantidad);
+                total += producto.getPrecios().get(orden.getMoneda()) * cantidad;
+            }
+        }
+
+        orden.setProductos(updatedProductos);  
+        orden.setTotal(total); 
+
+        ordenRepository.save(orden);
+
+        OrdenResponse ordenResponse = new OrdenResponse(orden);
+
+        return ordenResponse;
     }
 
-    public Orden save(OrdenDTO ordenDTO) {
-        Cliente cliente = clienteRepository.findClienteByCorreo(ordenDTO.getClienteCorreo())
+    @Transactional
+    public Orden save(String moneda, Long clienteId, Map<Long, Integer> productos) {
+        Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
         Orden orden = new Orden();
+        orden.setMoneda(moneda);
         orden.setCliente(cliente);
-        orden.setMoneda(ordenDTO.getMoneda());
 
-        Double precioTotal = 0.0;
+        Map<Producto, Integer> productosMap = new HashMap<>();
+        double total = 0;
 
-        List<OrdenProducto> ordenProductos = ordenDTO.getProductos().stream()
-                .map(dto -> {
-                    Producto producto = productoRepository.findById(dto.getProductoId())
-                            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-                    return new OrdenProducto(orden, producto, dto.getCantidad());
-                })
-                .collect(Collectors.toList());
-        for(OrdenProducto op: ordenProductos){
-            Producto prod = op.getProducto();
-            Integer cantidad = op.getCantidad();
-            if(prod.getStock() < cantidad) throw new RuntimeException("No hay suficientes unidades para esta orden");
-            prod.setStock( prod.getStock() - cantidad);
-            if(orden.getMoneda().equals("COP")) precioTotal += prod.getPrecios().get("COP") * cantidad;
-            if(orden.getMoneda().equals("USD")) precioTotal += prod.getPrecios().get("USD") * cantidad;
+        for (Map.Entry<Long, Integer> entry : productos.entrySet()) {
+            Producto producto = productoRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            if (producto.getStock() < entry.getValue()) {
+                throw new RuntimeException("Stock insuficiente para producto: " + producto.getNombre());
+            }
+
+            producto.setStock(producto.getStock() - entry.getValue()); 
+            productoRepository.save(producto);
+
+            productosMap.put(producto, entry.getValue());
+            total += producto.getPrecios().get(moneda) * entry.getValue();
         }
-        orden.setTotal(precioTotal);
-        orden.setOrdenProductos(ordenProductos);
+
+        orden.setProductos(productosMap);
+        orden.setTotal(total);
 
         return ordenRepository.save(orden);
     }
 
+    @Transactional
     public void delete(Long id) {
-        try {
-            Orden orden = ordenRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+        Orden orden = ordenRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
 
-            orden.getOrdenProductos().forEach(ordenProducto -> {
-                Producto producto = ordenProducto.getProducto();
-                producto.setStock(producto.getStock() + ordenProducto.getCantidad());
-                productoRepository.save(producto);
-            });
+        // Restaurar el stock antes de eliminar
+        orden.getProductos().forEach((producto, cantidad) -> {
+            producto.setStock(producto.getStock() + cantidad);
+            productoRepository.save(producto);
+        });
 
-            orden.getOrdenProductos().clear();
-            ordenRepository.save(orden);
-
-            ordenRepository.delete(orden);
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new RuntimeException("La orden fue modificada por otra transacción, por favor intente de nuevo.");
-        }
+        ordenRepository.delete(orden);
     }
 }

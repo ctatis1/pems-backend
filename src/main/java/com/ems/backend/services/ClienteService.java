@@ -28,6 +28,12 @@ public class ClienteService {
     public Cliente save(Cliente cliente) {
         return clienteRepository.save(cliente);
     }
+    public Cliente update(Long id, Cliente cliente) {
+        Cliente actualCliente = clienteRepository.findById(id).orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        actualCliente.setCorreo(cliente.getCorreo());
+        actualCliente.setNombre(cliente.getNombre());
+        return clienteRepository.save(actualCliente);
+    }
 
     public void delete(Long id) {
         clienteRepository.deleteById(id);

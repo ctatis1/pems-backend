@@ -1,8 +1,8 @@
 package com.ems.backend.controllers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ems.backend.entities.Orden;
-import com.ems.backend.entities.OrdenDTO;
+import com.ems.backend.entities.OrdenRequest;
+import com.ems.backend.entities.OrdenResponse;
 import com.ems.backend.services.OrdenService;
 
 @RestController
@@ -27,34 +28,35 @@ public class OrdenController {
     private OrdenService ordenService;
 
     @GetMapping
-    public List<Orden> getAllOrdenes() {
-        return ordenService.getAll();
+    public ResponseEntity<List<OrdenResponse>> getAllOrdenes() {
+        List<Orden> ordenes = ordenService.getAll();
+        List<OrdenResponse> response = ordenes.stream()
+                .map(OrdenResponse::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Orden> getOrdenById(@PathVariable Long id) {
+    public ResponseEntity<OrdenResponse> getOrdenById(@PathVariable Long id) {
         Optional<Orden> orden = ordenService.getById(id);
         if (orden.isPresent()) {
-            return ResponseEntity.ok(orden.get());
+            OrdenResponse ordenResponse = new OrdenResponse(orden.get());
+            return ResponseEntity.ok(ordenResponse);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
     @PostMapping
-    public ResponseEntity<?> createOrden(@RequestBody OrdenDTO ordenDTO) {
-        ordenService.save(ordenDTO);
+    public ResponseEntity<?> createOrden(@RequestBody OrdenRequest ordenRequest) {
+        ordenService.save(ordenRequest.getMoneda(), ordenRequest.getClienteId(), ordenRequest.getProductos());
         return ResponseEntity.status(HttpStatus.CREATED).body("Orden creada exitosamente");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Orden> updateOrden(@PathVariable Long id, @RequestBody Orden ordenDetails) {
-        try {
-            Orden updatedOrden = ordenService.updateOrden(id, ordenDetails);
-            return ResponseEntity.ok(updatedOrden);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    public ResponseEntity<?> updateOrden(@PathVariable Long id, @RequestBody OrdenRequest ordenDetails) {
+        ordenService.updateOrden(id, ordenDetails);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Orden actualizada exitosamente");
     }
 
     @DeleteMapping("/{id}")

@@ -45,6 +45,10 @@ public class SecurityConfig {
                                    "/cliente/**", 
                                    "/producto/**", 
                                    "/categoria/**").hasAuthority("ADMIN")
+                    .requestMatchers(HttpMethod.PUT,"/empresa/**", 
+                                   "/cliente/**", 
+                                   "/producto/**", 
+                                   "/categoria/**").hasAuthority("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/empresa/**", 
                                      "/cliente/**", 
                                      "/producto/**", 

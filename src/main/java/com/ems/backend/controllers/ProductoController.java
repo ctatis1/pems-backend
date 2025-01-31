@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,8 +52,8 @@ public class ProductoController {
 
     @PostMapping
     public ResponseEntity<?> crearProducto(@RequestBody ProductoRequest productoRequest) {
-        Empresa empresa = empresaService.getByNit(productoRequest.getEmpresaNit()).orElse(null);
-        Categoria categoria = categoriaService.getById(Long.valueOf(productoRequest.getCategoriaId())).orElse(null);
+        Empresa empresa = empresaService.getByNit(productoRequest.getEmpresaNit()).orElseThrow( () -> new RuntimeException("Empresa no encontrada") );
+        Categoria categoria = categoriaService.getById(Long.valueOf(productoRequest.getCategoriaId())).orElseThrow( () -> new RuntimeException("Categoria no encontrada") );
 
         Producto producto = new Producto();
         producto.setCodigo(productoRequest.getCodigo());
@@ -64,6 +65,14 @@ public class ProductoController {
 
         productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Producto creado exitosamente");
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProducto(@PathVariable Long id, @RequestBody ProductoRequest productoRequest) {
+        Empresa empresa = empresaService.getByNit(productoRequest.getEmpresaNit()).orElseThrow( () -> new RuntimeException("Empresa no encontrada") );
+        Categoria categoria = categoriaService.getById(Long.valueOf(productoRequest.getCategoriaId())).orElseThrow( () -> new RuntimeException("Categoria no encontrada") );
+        productoService.update(id, productoRequest, empresa, categoria);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Producto actualizado exitosamente");
     }
 
     @DeleteMapping("/{id}")
