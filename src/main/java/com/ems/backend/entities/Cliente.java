@@ -30,7 +30,6 @@ public class Cliente {
     private String correo;
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     private List<Orden> ordenes;
     
 }
