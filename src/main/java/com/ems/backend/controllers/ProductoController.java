@@ -1,12 +1,15 @@
 package com.ems.backend.controllers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +26,8 @@ import com.ems.backend.entities.ProductoRequest;
 import com.ems.backend.services.CategoriaService;
 import com.ems.backend.services.EmpresaService;
 import com.ems.backend.services.ProductoService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/producto")
@@ -51,7 +56,8 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crearProducto(@RequestBody ProductoRequest productoRequest) {
+    public ResponseEntity<?> crearProducto(@Valid @RequestBody ProductoRequest productoRequest, BindingResult result) {
+        if(result.hasErrors()) return validation(result);
         Empresa empresa = empresaService.getByNit(productoRequest.getEmpresaNit()).orElseThrow( () -> new RuntimeException("Empresa no encontrada") );
         Categoria categoria = categoriaService.getById(Long.valueOf(productoRequest.getCategoriaId())).orElseThrow( () -> new RuntimeException("Categoria no encontrada") );
 
@@ -69,7 +75,8 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProducto(@PathVariable Long id, @RequestBody ProductoRequest productoRequest) {
+    public ResponseEntity<?> updateProducto(@PathVariable Long id, @Valid @RequestBody ProductoRequest productoRequest, BindingResult result) {
+        if(result.hasErrors()) return validation(result);
         Empresa empresa = empresaService.getByNit(productoRequest.getEmpresaNit()).orElseThrow( () -> new RuntimeException("Empresa no encontrada") );
         Categoria categoria = categoriaService.getById(Long.valueOf(productoRequest.getCategoriaId())).orElseThrow( () -> new RuntimeException("Categoria no encontrada") );
         productoService.update(id, productoRequest, empresa, categoria);
@@ -80,5 +87,14 @@ public class ProductoController {
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
         productoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private ResponseEntity<?> validation(BindingResult result) {
+        Map<String, String> errors = new HashMap<>();
+
+        result.getFieldErrors().forEach(err -> {
+            errors.put(err.getField(), err.getDefaultMessage());
+        });
+        return ResponseEntity.badRequest().body(errors);
     }
 }
