@@ -30,7 +30,7 @@ public class Empresa {
 
     @NotBlank(message = "La direccion es obligatorio")
     @NotNull(message = "La direccion no puede ser nulo")
-    @Size(min = 15, max = 50, message = "La direccion debe tener entre 15 y 50 caracteres")
+    @Size(min = 8, max = 50, message = "La direccion debe tener entre 8 y 50 caracteres")
     private String direccion;
 
     @NotBlank(message = "El telefono es obligatorio")

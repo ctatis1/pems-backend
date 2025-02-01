@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.ems.backend.entities.Cliente;
+import com.ems.backend.entities.Orden;
 import com.ems.backend.repositories.ClienteRepository;
 
 @Service

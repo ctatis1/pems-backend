@@ -15,7 +15,7 @@ import com.ems.backend.services.JwtService;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin
+@CrossOrigin(originPatterns = "*")
 public class AuthController {
     private final JwtService jwtService;
     
